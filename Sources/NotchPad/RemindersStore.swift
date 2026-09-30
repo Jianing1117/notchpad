@@ -66,6 +66,12 @@ final class RemindersStore: TodoBackend {
         try? store.save(r, commit: true)
     }
 
+    func rename(id: String, title: String) async {
+        guard let r = reminder(id) else { return }
+        r.title = title
+        try? store.save(r, commit: true)
+    }
+
     func delete(id: String) async {
         guard let r = reminder(id) else { return }
         try? store.remove(r, commit: true)

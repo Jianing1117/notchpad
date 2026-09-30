@@ -381,25 +381,97 @@ struct TodoRow<M: View>: View {
             .buttonStyle(.plain)
             .help(hint ?? "")
 
-            Text(item.title)
-                .font(.system(size: 13))
-                .foregroundStyle(item.done ? Theme.dim : Theme.text)
-                .strikethrough(item.done, color: Theme.dim)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 1)
+            if model.editingItemID == item.id {
+                EditField(model: model, item: item)
+                    .padding(.top, 1)
+            } else {
+                Text(item.title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(item.done ? Theme.dim : Theme.text)
+                    .strikethrough(item.done, color: Theme.dim)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 1)
+                    .contentShape(Rectangle())
+                    // 点一下文字就地修改 / click the text to edit it in place
+                    .onTapGesture {
+                        model.makeKey()
+                        model.editingItemID = item.id
+                    }
+            }
         }
         .padding(.vertical, 5)
         .padding(.horizontal, 6)
-        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(hover ? Theme.hover : .clear))
+        .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+            .fill(model.editingItemID == item.id ? Theme.field : (hover ? Theme.hover : .clear)))
         .contentShape(Rectangle())
         .onHover { hover = $0 }
         .contextMenu { menu() }
-        // 拖到别的段就换段；拖到别的 app 里会粘贴标题
-        .onDrag {
-            model.beginDrag(item)
-            return NSItemProvider(object: item.title as NSString)
+        .modifier(RowDrag(model: model, item: item))
+    }
+}
+
+/// 按住一条可以拖到别的段（拖到别的 app 里会粘贴标题）；正在改它的标题时不拖，好在输入框里选字
+/// Drag a row to another section (or into another app to paste its title) — but not while its title is being edited
+struct RowDrag: ViewModifier {
+    @ObservedObject var model: AppModel
+    let item: TodoItem
+
+    func body(content: Content) -> some View {
+        if model.editingItemID == item.id {
+            content
+        } else {
+            content.onDrag {
+                model.beginDrag(item)
+                return NSItemProvider(object: item.title as NSString)
+            }
         }
+    }
+}
+
+/// 就地修改一条的标题：回车或点别处保存，Esc 取消；清空不保存
+/// Edit a title in place: Return or clicking away saves, Esc cancels; an empty title is ignored
+struct EditField: View {
+    @ObservedObject var model: AppModel
+    let item: TodoItem
+
+    @State private var text: String
+    @FocusState private var focused: Bool
+
+    init(model: AppModel, item: TodoItem) {
+        self.model = model
+        self.item = item
+        _text = State(initialValue: item.title)
+    }
+
+    var body: some View {
+        TextField("", text: $text, axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.text)
+            .lineLimit(3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .focused($focused)
+            .onSubmit(commit)
+            .onAppear {
+                model.editing = true
+                DispatchQueue.main.async { focused = true }
+            }
+            .onChange(of: focused) { was, now in
+                if was, !now { commit() }
+            }
+            .onDisappear {
+                commit()
+                model.editing = false
+            }
+    }
+
+    private func commit() {
+        // Esc 取消时 editingItemID 已经被清掉，这里就不会保存
+        // After Esc, editingItemID is already nil, so nothing is saved
+        guard model.editingItemID == item.id else { return }
+        model.editingItemID = nil
+        model.rename(item, to: text)
     }
 }
 

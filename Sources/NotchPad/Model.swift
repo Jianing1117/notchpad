@@ -51,6 +51,7 @@ protocol TodoBackend: AnyObject {
     func items(list: String, doneSince: Date) async -> [TodoItem]
     func add(_ title: String, list: String) async -> TodoItem?
     func setDone(id: String, _ done: Bool) async
+    func rename(id: String, title: String) async
     func delete(id: String) async
     func move(id: String, toList: String) async
 }
@@ -89,6 +90,10 @@ final class AppModel: ObservableObject {
     /// 分段清单的输入框要加进哪一段（按 tab 序号）/ which section the input adds to, per tab
     @Published var sectionTarget: [Int: Int] = [:]
     @Published var jotFocusTick = 0
+
+    /// 正在改标题的那一条：点一下文字进入；回车或点别处保存，Esc 取消
+    /// The item whose title is being edited: click the text to start; Return or clicking away saves, Esc cancels
+    @Published var editingItemID: String?
 
     /// 正在拖的那一条（拖动开始时记下，放下时用）
     var dragging: (id: String, at: Date)?
@@ -339,6 +344,14 @@ final class AppModel: ObservableObject {
             if list != item.list { await todos.move(id: item.id, toList: list) }
             scheduleReload()
         }
+    }
+
+    /// 改一条的标题；清空不保存 / rename an item; an empty title is ignored
+    func rename(_ item: TodoItem, to title: String) {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty, t != item.title else { return }
+        if let i = lists[item.list]?.firstIndex(where: { $0.id == item.id }) { lists[item.list]?[i].title = t }
+        Task { await todos.rename(id: item.id, title: t) }
     }
 
     func delete(_ item: TodoItem) {

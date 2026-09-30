@@ -95,6 +95,12 @@ final class DemoTodos: TodoBackend {
         }
     }
 
+    func rename(id: String, title: String) async {
+        for key in data.keys {
+            if let i = data[key]?.firstIndex(where: { $0.id == id }) { data[key]?[i].title = title }
+        }
+    }
+
     func delete(id: String) async {
         for key in data.keys { data[key]?.removeAll { $0.id == id } }
     }

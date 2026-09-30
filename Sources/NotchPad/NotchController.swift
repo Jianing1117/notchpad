@@ -170,6 +170,11 @@ final class NotchController {
         if event.keyCode == 53 { // Esc
             // 输入法还在选字时，Esc 留给输入法 / let the input method use Esc while composing
             if let tv = panel.firstResponder as? NSTextView, tv.hasMarkedText() { return event }
+            // 正在改某一条的标题：Esc 只取消这次修改 / while editing a title, Esc only cancels the edit
+            if model.editingItemID != nil {
+                model.editingItemID = nil
+                return nil
+            }
             collapse(force: true)
             return nil
         }

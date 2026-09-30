@@ -1,0 +1,37 @@
+{
+  "tabs": [
+    {
+      "type": "pipeline",
+      "title": "Ideas",
+      "color": "#42FF8C",
+      "placeholder": "New idea — press Return",
+      "stages": [
+        { "title": "Ideas", "list": "Content Ideas" },
+        { "title": "Ready to Film", "list": "Ready to Film" }
+      ],
+      "doneTitle": "Filmed"
+    },
+    {
+      "type": "jots",
+      "title": "Jots",
+      "color": "#4DD9FF",
+      "folder": "Quick Jots"
+    },
+    {
+      "type": "sections",
+      "title": "Todo",
+      "color": "#FF61B3",
+      "pinned": {
+        "title": "This Month",
+        "file": "goals.md",
+        "heading": "This Month"
+      },
+      "sections": [
+        { "title": "Urgent & Important", "color": "#FF61B3" },
+        { "title": "Important, Not Urgent", "color": "#FFCC47" },
+        { "title": "Urgent, Not Important", "color": "#B399FF" },
+        { "title": "Neither", "color": "#9E9E9E" }
+      ]
+    }
+  ]
+}

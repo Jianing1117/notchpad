@@ -1,0 +1,6 @@
+CFBundleDisplayName = "NotchPad";
+NSRemindersFullAccessUsageDescription = "Your lists are stored in Apple Reminders so they sync to your iPhone.";
+NSRemindersUsageDescription = "Your lists are stored in Apple Reminders so they sync to your iPhone.";
+NSAppleEventsUsageDescription = "Jots are saved as notes in the Notes app, so NotchPad needs to control Notes.";
+NSDocumentsFolderUsageDescription = "Only needed if your pinned card reads a file in Documents. Read-only.";
+NSDesktopFolderUsageDescription = "Only needed if your pinned card reads a file on the Desktop. Read-only.";

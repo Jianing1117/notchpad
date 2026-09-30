@@ -1,0 +1,6 @@
+CFBundleDisplayName = "刘海记";
+NSRemindersFullAccessUsageDescription = "清单存在「提醒事项」里，手机上也能看到、勾选。";
+NSRemindersUsageDescription = "清单存在「提醒事项」里，手机上也能看到、勾选。";
+NSAppleEventsUsageDescription = "速记存成「备忘录」里的笔记，需要控制备忘录来读写。";
+NSDocumentsFolderUsageDescription = "只有当置顶卡片要读「文稿」里的文件时才需要，只读不改。";
+NSDesktopFolderUsageDescription = "只有当置顶卡片要读桌面上的文件时才需要，只读不改。";

@@ -1,0 +1,36 @@
+{
+  "tabs": [
+    {
+      "type": "pipeline",
+      "title": "作业",
+      "color": "#42FF8C",
+      "placeholder": "记一项作业，回车保存",
+      "stages": [
+        { "title": "待开始", "list": "作业·待开始" },
+        { "title": "进行中", "list": "作业·进行中" }
+      ],
+      "doneTitle": "已交"
+    },
+    {
+      "type": "jots",
+      "title": "灵感",
+      "color": "#4DD9FF",
+      "folder": "灵感"
+    },
+    {
+      "type": "sections",
+      "title": "Todo",
+      "color": "#FF61B3",
+      "pinned": {
+        "title": "本月重点",
+        "file": "goals.md",
+        "heading": "本月重点"
+      },
+      "sections": [
+        { "title": "今天", "color": "#FF61B3" },
+        { "title": "本周", "color": "#FFCC47" },
+        { "title": "以后", "color": "#9E9E9E" }
+      ]
+    }
+  ]
+}

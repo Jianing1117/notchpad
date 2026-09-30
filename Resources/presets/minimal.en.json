@@ -1,0 +1,18 @@
+{
+  "tabs": [
+    {
+      "type": "sections",
+      "title": "To Do",
+      "color": "#FF61B3",
+      "sections": [
+        { "title": "To Do" }
+      ]
+    },
+    {
+      "type": "jots",
+      "title": "Jots",
+      "color": "#4DD9FF",
+      "folder": "Quick Jots"
+    }
+  ]
+}

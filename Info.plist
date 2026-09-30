@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>NotchPad</string>
+    <key>CFBundleIdentifier</key>
+    <string>io.github.jianing1117.notchpad</string>
+    <key>CFBundleName</key>
+    <string>NotchPad</string>
+    <key>CFBundleDisplayName</key>
+    <string>NotchPad</string>
+    <key>LSHasLocalizedDisplayName</key>
+    <true/>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>zh-Hans</string>
+    </array>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>MIT License</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Your lists are stored in Apple Reminders so they sync to your iPhone.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Your lists are stored in Apple Reminders so they sync to your iPhone.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Jots are saved as notes in the Notes app, so NotchPad needs to control Notes.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>Only needed if your pinned card reads a file in Documents. Read-only.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Only needed if your pinned card reads a file on the Desktop. Read-only.</string>
+</dict>
+</plist>

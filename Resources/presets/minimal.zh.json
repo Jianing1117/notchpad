@@ -1,0 +1,18 @@
+{
+  "tabs": [
+    {
+      "type": "sections",
+      "title": "待办",
+      "color": "#FF61B3",
+      "sections": [
+        { "title": "待办" }
+      ]
+    },
+    {
+      "type": "jots",
+      "title": "随手记",
+      "color": "#4DD9FF",
+      "folder": "随手记"
+    }
+  ]
+}

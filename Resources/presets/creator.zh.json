@@ -1,0 +1,37 @@
+{
+  "tabs": [
+    {
+      "type": "pipeline",
+      "title": "选题",
+      "color": "#42FF8C",
+      "placeholder": "记一个选题，回车保存",
+      "stages": [
+        { "title": "想法", "list": "选题" },
+        { "title": "待拍", "list": "待拍" }
+      ],
+      "doneTitle": "已拍"
+    },
+    {
+      "type": "jots",
+      "title": "随手记",
+      "color": "#4DD9FF",
+      "folder": "随手记"
+    },
+    {
+      "type": "sections",
+      "title": "Todo",
+      "color": "#FF61B3",
+      "pinned": {
+        "title": "本月重点",
+        "file": "goals.md",
+        "heading": "本月重点"
+      },
+      "sections": [
+        { "title": "重要紧急", "color": "#FF61B3" },
+        { "title": "重要不紧急", "color": "#FFCC47" },
+        { "title": "紧急不重要", "color": "#B399FF" },
+        { "title": "不重要不紧急", "color": "#9E9E9E" }
+      ]
+    }
+  ]
+}

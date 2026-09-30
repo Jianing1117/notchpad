@@ -1,0 +1,36 @@
+{
+  "tabs": [
+    {
+      "type": "pipeline",
+      "title": "Assignments",
+      "color": "#42FF8C",
+      "placeholder": "New assignment — press Return",
+      "stages": [
+        { "title": "To Start", "list": "Assignments · To Start" },
+        { "title": "In Progress", "list": "Assignments · In Progress" }
+      ],
+      "doneTitle": "Submitted"
+    },
+    {
+      "type": "jots",
+      "title": "Ideas",
+      "color": "#4DD9FF",
+      "folder": "Ideas"
+    },
+    {
+      "type": "sections",
+      "title": "Todo",
+      "color": "#FF61B3",
+      "pinned": {
+        "title": "This Month",
+        "file": "goals.md",
+        "heading": "This Month"
+      },
+      "sections": [
+        { "title": "Today", "color": "#FF61B3" },
+        { "title": "This Week", "color": "#FFCC47" },
+        { "title": "Later", "color": "#9E9E9E" }
+      ]
+    }
+  ]
+}

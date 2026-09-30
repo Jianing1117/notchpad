@@ -382,7 +382,7 @@ struct TodoRow<M: View>: View {
             .help(hint ?? "")
 
             if model.editingItemID == item.id {
-                EditField(model: model, item: item)
+                EditField(model: model)
                     .padding(.top, 1)
             } else {
                 Text(item.title)
@@ -394,10 +394,7 @@ struct TodoRow<M: View>: View {
                     .padding(.top, 1)
                     .contentShape(Rectangle())
                     // 点一下文字就地修改 / click the text to edit it in place
-                    .onTapGesture {
-                        model.makeKey()
-                        model.editingItemID = item.id
-                    }
+                    .onTapGesture { model.beginEdit(item) }
             }
         }
         .padding(.vertical, 5)
@@ -411,67 +408,42 @@ struct TodoRow<M: View>: View {
     }
 }
 
-/// 按住一条可以拖到别的段（拖到别的 app 里会粘贴标题）；正在改它的标题时不拖，好在输入框里选字
-/// Drag a row to another section (or into another app to paste its title) — but not while its title is being edited
+/// 按住一条可以拖到别的段（拖到别的 app 里会粘贴标题）。一直挂着，不在修改时切换：
+/// 切换会让整行重建，正在改的输入框跟着没了。输入框自己处理鼠标，在里面选字不会触发拖动。
+/// Drag a row to another section (or into another app to paste its title). Always attached — toggling it
+/// while editing would rebuild the row and drop the field. The text field handles its own mouse events.
 struct RowDrag: ViewModifier {
     @ObservedObject var model: AppModel
     let item: TodoItem
 
     func body(content: Content) -> some View {
-        if model.editingItemID == item.id {
-            content
-        } else {
-            content.onDrag {
-                model.beginDrag(item)
-                return NSItemProvider(object: item.title as NSString)
-            }
+        content.onDrag {
+            model.beginDrag(item)
+            return NSItemProvider(object: item.title as NSString)
         }
     }
 }
 
-/// 就地修改一条的标题：回车或点别处保存，Esc 取消；清空不保存
-/// Edit a title in place: Return or clicking away saves, Esc cancels; an empty title is ignored
+/// 就地修改一条的标题。文字存在 model.editDraft；回车、点别处、收起面板时保存，Esc 取消，清空不保存
+/// Edit a title in place. The text lives in model.editDraft; Return, clicking away or closing saves, Esc cancels
 struct EditField: View {
     @ObservedObject var model: AppModel
-    let item: TodoItem
 
-    @State private var text: String
     @FocusState private var focused: Bool
 
-    init(model: AppModel, item: TodoItem) {
-        self.model = model
-        self.item = item
-        _text = State(initialValue: item.title)
-    }
-
     var body: some View {
-        TextField("", text: $text, axis: .vertical)
+        TextField("", text: $model.editDraft, axis: .vertical)
             .textFieldStyle(.plain)
             .font(.system(size: 13))
             .foregroundStyle(Theme.text)
             .lineLimit(3)
             .frame(maxWidth: .infinity, alignment: .leading)
             .focused($focused)
-            .onSubmit(commit)
-            .onAppear {
-                model.editing = true
-                DispatchQueue.main.async { focused = true }
-            }
+            .onSubmit { model.endEdit(save: true) }
+            .onAppear { DispatchQueue.main.async { focused = true } }
             .onChange(of: focused) { was, now in
-                if was, !now { commit() }
+                if was, !now { model.endEdit(save: true) }   // 点了别处 / clicked away
             }
-            .onDisappear {
-                commit()
-                model.editing = false
-            }
-    }
-
-    private func commit() {
-        // Esc 取消时 editingItemID 已经被清掉，这里就不会保存
-        // After Esc, editingItemID is already nil, so nothing is saved
-        guard model.editingItemID == item.id else { return }
-        model.editingItemID = nil
-        model.rename(item, to: text)
     }
 }
 

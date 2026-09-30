@@ -72,6 +72,7 @@ final class AppModel: ObservableObject {
         didSet {
             guard tabIndex != oldValue else { return }
             UserDefaults.standard.set(tabIndex, forKey: "tab")
+            endEdit(save: true)
             editing = false
             if tab.type == .jots { refreshJots() }
         }
@@ -91,9 +92,12 @@ final class AppModel: ObservableObject {
     @Published var sectionTarget: [Int: Int] = [:]
     @Published var jotFocusTick = 0
 
-    /// 正在改标题的那一条：点一下文字进入；回车或点别处保存，Esc 取消
-    /// The item whose title is being edited: click the text to start; Return or clicking away saves, Esc cancels
+    /// 正在改标题的那一条和改到一半的文字：点一下文字进入；回车、点别处或收起面板时保存，Esc 取消。
+    /// 文字放在这里而不是输入框里：输入框被重建时不会丢，也不会自己结束修改。
+    /// The item being edited and its draft. Return, clicking away or closing the panel saves; Esc cancels.
+    /// The draft lives here, not in the field, so a rebuilt field neither loses it nor ends the edit.
     @Published var editingItemID: String?
+    @Published var editDraft = ""
 
     /// 正在拖的那一条（拖动开始时记下，放下时用）
     var dragging: (id: String, at: Date)?
@@ -344,6 +348,23 @@ final class AppModel: ObservableObject {
             if list != item.list { await todos.move(id: item.id, toList: list) }
             scheduleReload()
         }
+    }
+
+    func beginEdit(_ item: TodoItem) {
+        endEdit(save: true)   // 正在改别的那条，先保存 / save any other edit first
+        makeKey()
+        editDraft = item.title
+        editingItemID = item.id
+        editing = true
+    }
+
+    /// 结束修改：save 为 true 就保存（清空不保存）/ end editing; saves when `save` is true (empty is ignored)
+    func endEdit(save: Bool) {
+        guard let id = editingItemID else { return }
+        editingItemID = nil
+        editing = false
+        guard save, let item = lists.values.lazy.flatMap({ $0 }).first(where: { $0.id == id }) else { return }
+        rename(item, to: editDraft)
     }
 
     /// 改一条的标题；清空不保存 / rename an item; an empty title is ignored

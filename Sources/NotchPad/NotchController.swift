@@ -106,6 +106,7 @@ final class NotchController {
         collapseTask?.cancel(); collapseTask = nil
         if force { pinned = false }
         guard model.expanded, !pinned else { return }
+        model.endEdit(save: true)   // 收起前把正在改的标题存好 / save an in-progress edit before closing
         model.editing = false
         model.dragging = nil
         panel.makeFirstResponder(nil)
@@ -153,7 +154,7 @@ final class NotchController {
         let p = NSEvent.mouseLocation
         if model.expanded {
             let inside = geometry.contentFrame.insetBy(dx: -6, dy: -6).contains(p) || geometry.hotZone.contains(p)
-            if inside || model.editing || pinned {
+            if inside || model.editing || model.editingItemID != nil || pinned {
                 collapseTask?.cancel(); collapseTask = nil
             } else if collapseTask == nil {
                 collapseTask = later(.milliseconds(300)) { $0.collapse() }
@@ -172,7 +173,7 @@ final class NotchController {
             if let tv = panel.firstResponder as? NSTextView, tv.hasMarkedText() { return event }
             // 正在改某一条的标题：Esc 只取消这次修改 / while editing a title, Esc only cancels the edit
             if model.editingItemID != nil {
-                model.editingItemID = nil
+                model.endEdit(save: false)
                 return nil
             }
             collapse(force: true)

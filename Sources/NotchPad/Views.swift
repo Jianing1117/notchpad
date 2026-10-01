@@ -344,10 +344,159 @@ struct DropSection<Content: View>: View {
                     .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                         .strokeBorder(accent.opacity(targeted ? 0.45 : 0), lineWidth: 1))
             )
+            .background(NativeDropRegistration(drop: drop, targetChanged: { targeted = $0 }))
             .contentShape(Rectangle())
             .onDrop(of: [UTType.plainText, UTType.utf8PlainText, UTType.text], isTargeted: $targeted) { _ in drop() }
             .animation(.easeOut(duration: 0.12), value: targeted)
     }
+}
+
+/// 记录每段的真实窗口坐标，让 AppKit 拖动结束时同步完成面板内移动。
+/// 背景视图不拦截点击、输入框或右键菜单。
+struct NativeDropRegistration: NSViewRepresentable {
+    let drop: () -> Bool
+    let targetChanged: (Bool) -> Void
+    func makeNSView(context: Context) -> NativeDropArea {
+        let view = NativeDropArea()
+        NativeDropArea.areas.add(view)
+        return view
+    }
+    func updateNSView(_ view: NativeDropArea, context: Context) {
+        view.drop = drop
+        view.targetChanged = targetChanged
+    }
+}
+
+final class NativeDropArea: NSView {
+    static let areas = NSHashTable<NativeDropArea>.weakObjects()
+    var drop: () -> Bool = { false }
+    var targetChanged: (Bool) -> Void = { _ in }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    private static func target(at point: NSPoint?, in window: NSWindow?) -> NativeDropArea? {
+        guard let point, let window else { return nil }
+        let local = window.convertPoint(fromScreen: point)
+        return areas.allObjects.first { area in
+            area.window === window && !area.isHiddenOrHasHiddenAncestor &&
+            area.bounds.intersection(area.visibleRect).contains(area.convert(local, from: nil))
+        }
+    }
+    static func updateTarget(at point: NSPoint?, in window: NSWindow?) {
+        let selected = target(at: point, in: window)
+        for area in areas.allObjects { area.targetChanged(area === selected) }
+    }
+    static func drop(at point: NSPoint, in window: NSWindow?) {
+        _ = target(at: point, in: window)?.drop()
+    }
+}
+
+/// 盖在标题文字上的一层透明 AppKit 视图：按下后几乎没动就松开 = 点击（进入修改）；
+/// 按住移动超过 4pt = 拖动（把这一条拖到别的段，拖到别的 app 里会粘贴标题）。
+/// SwiftUI 的 onTapGesture 会把整行的拖动吃掉，所以点击和拖动交给 AppKit 自己分辨。
+struct TitleHitArea: NSViewRepresentable {
+    let text: String
+    let onClick: () -> Void
+    let onDragStart: () -> Void
+    let onDragEnd: () -> Void
+
+    func makeNSView(context: Context) -> TitleHitView { TitleHitView() }
+
+    func updateNSView(_ view: TitleHitView, context: Context) {
+        view.text = text
+        view.onClick = onClick
+        view.onDragStart = onDragStart
+        view.onDragEnd = onDragEnd
+    }
+}
+
+final class TitleHitView: NSView, NSDraggingSource {
+    var text = ""
+    var onClick: () -> Void = {}
+    var onDragStart: () -> Void = {}
+    var onDragEnd: () -> Void = {}
+    private var downAt: NSPoint?
+    private var cancelMonitor: Any?
+    private var dragCancelled = false
+
+    // 面板不是当前窗口时，第一下点击也要算数
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var needsPanelToBecomeKey: Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        // Control + 点击是右键菜单
+        if event.modifierFlags.contains(.control) {
+            rightMouseDown(with: event)
+            return
+        }
+        downAt = event.locationInWindow
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let start = downAt else { return }
+        let p = event.locationInWindow
+        guard hypot(p.x - start.x, p.y - start.y) > 4 else { return }
+        downAt = nil
+        dragCancelled = false
+        cancelMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 { self?.dragCancelled = true }
+            return event
+        }
+        onDragStart()
+        let image = dragImage()
+        let local = convert(p, from: nil)
+        let item = NSDraggingItem(pasteboardWriter: text as NSString)
+        item.setDraggingFrame(NSRect(x: local.x - 16, y: local.y - image.size.height / 2,
+                                     width: image.size.width, height: image.size.height),
+                              contents: image)
+        beginDraggingSession(with: [item], event: event, source: self)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard downAt != nil else { return }
+        downAt = nil
+        onClick()
+    }
+
+    func draggingSession(_ session: NSDraggingSession,
+                         sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        [.copy, .move, .generic]
+    }
+
+    func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
+        NativeDropArea.updateTarget(at: screenPoint, in: window)
+    }
+
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint,
+                         operation: NSDragOperation) {
+        // SwiftUI 的 drop 回调可能晚于 AppKit 的 session 结束；先处理面板内的放下，
+        // 再清理源条目。SwiftUI 若已处理，model 的 dragging 已为空，不会重复移动。
+        if !dragCancelled { NativeDropArea.drop(at: screenPoint, in: window) }
+        if let cancelMonitor { NSEvent.removeMonitor(cancelMonitor) }
+        cancelMonitor = nil
+        NativeDropArea.updateTarget(at: nil, in: window)
+        onDragEnd()
+    }
+
+    /// 拖动时跟着鼠标走的那块小卡片
+    private func dragImage() -> NSImage {
+        let title = NSAttributedString(string: text, attributes: [
+            .font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor.white,
+        ])
+        let size = NSSize(width: min(title.size().width + 20, 360), height: title.size().height + 10)
+        return NSImage(size: size, flipped: false) { r in
+            NSColor(white: 0.14, alpha: 0.95).setFill()
+            NSBezierPath(roundedRect: r, xRadius: 7, yRadius: 7).fill()
+            title.draw(with: r.insetBy(dx: 10, dy: 5), options: [.truncatesLastVisibleLine, .usesLineFragmentOrigin])
+            return true
+        }
+    }
+}
+
+struct MoveTarget: Identifiable {
+    let id: Int
+    let color: Color
+    let title: String
+    let action: () -> Void
 }
 
 // MARK: - 待办行 / a checklist row
@@ -358,6 +507,7 @@ struct TodoRow<M: View>: View {
     let accent: Color
     let toggle: () -> Void
     var hint: String?
+    var moves: [MoveTarget] = []
     @ViewBuilder let menu: () -> M
 
     @State private var hover = false
@@ -392,9 +542,27 @@ struct TodoRow<M: View>: View {
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 1)
-                    .contentShape(Rectangle())
-                    // 点一下文字就地修改 / click the text to edit it in place
-                    .onTapGesture { model.beginEdit(item) }
+                    .overlay(TitleHitArea(text: item.title,
+                                          onClick: { model.beginEdit(item) },
+                                          onDragStart: { model.titleDragActive = true; model.beginDrag(item) },
+                                          onDragEnd: { model.titleDragActive = false; model.dragging = nil }))
+            }
+
+            if !moves.isEmpty {
+                let show = hover && model.editingItemID != item.id
+                HStack(spacing: 2) {
+                    ForEach(moves) { m in
+                        Button(action: m.action) {
+                            Circle().fill(m.color).frame(width: 8, height: 8)
+                                .frame(width: 18, height: 18)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("移到「\(m.title)」")
+                    }
+                }
+                .opacity(show ? 1 : 0)
+                .allowsHitTesting(show)
             }
         }
         .padding(.vertical, 5)
@@ -404,23 +572,6 @@ struct TodoRow<M: View>: View {
         .contentShape(Rectangle())
         .onHover { hover = $0 }
         .contextMenu { menu() }
-        .modifier(RowDrag(model: model, item: item))
-    }
-}
-
-/// 按住一条可以拖到别的段（拖到别的 app 里会粘贴标题）。一直挂着，不在修改时切换：
-/// 切换会让整行重建，正在改的输入框跟着没了。输入框自己处理鼠标，在里面选字不会触发拖动。
-/// Drag a row to another section (or into another app to paste its title). Always attached — toggling it
-/// while editing would rebuild the row and drop the field. The text field handles its own mouse events.
-struct RowDrag: ViewModifier {
-    @ObservedObject var model: AppModel
-    let item: TodoItem
-
-    func body(content: Content) -> some View {
-        content.onDrag {
-            model.beginDrag(item)
-            return NSItemProvider(object: item.title as NSString)
-        }
     }
 }
 
@@ -631,7 +782,13 @@ struct SectionsView: View {
             EmptyLine(text: L.s("还没有待办。在上面写一条试试。", "Nothing here yet. Add one above."))
         }
         ForEach(items) { item in
-            TodoRow(model: model, item: item, accent: color, toggle: { model.toggle(item) }) {
+            TodoRow(model: model, item: item, accent: color, toggle: { model.toggle(item) },
+                    moves: sections.indices.filter { $0 != i }.map { j in
+                        MoveTarget(id: j, color: model.sectionColor(spec, j),
+                                   title: L.s("移到「\(sections[j].title)」", "Move to “\(sections[j].title)”")) {
+                            model.place(item, list: sections[j].listName, done: item.done)
+                        }
+                    }) {
                 ForEach(Array(sections.enumerated()), id: \.offset) { j, s in
                     if j != i {
                         Button(L.s("移到「\(s.title)」", "Move to “\(s.title)”")) { model.place(item, list: s.listName, done: item.done) }

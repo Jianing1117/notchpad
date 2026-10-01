@@ -100,6 +100,7 @@ final class AppModel: ObservableObject {
     @Published var editDraft = ""
 
     /// 正在拖的那一条（拖动开始时记下，放下时用）
+    var titleDragActive = false
     var dragging: (id: String, at: Date)?
 
     var makeKey: () -> Void = {}

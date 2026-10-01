@@ -154,7 +154,7 @@ final class NotchController {
         let p = NSEvent.mouseLocation
         if model.expanded {
             let inside = geometry.contentFrame.insetBy(dx: -6, dy: -6).contains(p) || geometry.hotZone.contains(p)
-            if inside || model.editing || model.editingItemID != nil || pinned {
+            if inside || model.titleDragActive || model.editing || model.editingItemID != nil || pinned {
                 collapseTask?.cancel(); collapseTask = nil
             } else if collapseTask == nil {
                 collapseTask = later(.milliseconds(300)) { $0.collapse() }

@@ -50,7 +50,7 @@ Requires macOS 14 or later. Best on a MacBook with a notch; on other Macs (or ex
 
 - Return saves; in Jots, ⌥ Return adds a new line.
 - **Pipeline:** click the circle to move to the next stage; on the last stage it marks the item done. Click a done item to move it back.
-- **Sections:** click the circle to check an item off; it sinks to the bottom of its section (only today's are shown). The dots next to the input choose the section.
+- **Sections:** click the circle to check an item off; it sinks to the bottom of its section (only today's are shown). The dots next to the input choose the section. Hover over an item to reveal colored dots for the other sections; click a dot to move it.
 - **Edit:** click an item's text to change it in place. Return or clicking away saves; Esc cancels.
 - **Drag** an item onto another section. Drop it into another app to paste its title. Right-click to move or delete.
 - **Jots:** clicking into the field stamps the time; click the mic or press the 🎤 key to dictate. The list shows only the first sentence; click to open the full note.

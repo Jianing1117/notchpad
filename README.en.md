@@ -2,9 +2,7 @@
 
 # NotchPad
 
-A small notepad that lives in your MacBook's notch: hover over the notch and it opens, move away and it closes.
-
-NotchPad keeps no data of its own. Lists live in Apple **Reminders** and quick notes live in Apple **Notes**. No account, no network, and your iPhone syncs through the stock apps. If you ever stop using it, your data is still right there.
+To-dos and ideas need somewhere you can drop them in a second without giving up screen space. NotchPad is a lightweight notepad in your MacBook's notch: hover to open, move away to close, with tabs you set up for to-dos, daily ideas, and work in progress. Data lives in Apple Reminders and Notes, so there's no account, no network, and your iPhone syncs through the stock apps.
 
 <p>
   <img src="docs/screenshots/en-1-pipeline.png" width="32%" alt="Ideas: Ideas → Ready to Film → Filmed">
